@@ -60,7 +60,7 @@ async function sendPrediction(messageObj, datetime) {
     const predicion = await getPrediction(datetime);
     return await axiosInstance.get("sendMessage", {
         chat_id: messageObj.chat.id,
-        text: predicion
+        text: predicion ?? "I couldn't get a prediction right now. Please try again later."
     })
 
 }
@@ -82,11 +82,23 @@ async function handleMessage(messageObj) {
         }
         if (command.includes('date:')) {
             const inputDate = command.split(':')[1];
+            if (!inputDate) {
+                return await sendMessage(messageObj, "Please provide your birth date in DD.MM.YYYY format.");
+            }
+
             const normalizedDate = new Date();
             const parsedDate = inputDate.split(/[\.\/\:]/)
+            if (parsedDate.length !== 3) {
+                return await sendMessage(messageObj, "Invalid date format. Use DD.MM.YYYY");
+            }
+
             normalizedDate.setDate(parsedDate[0]);
             normalizedDate.setMonth(parsedDate[1] - 1);
             normalizedDate.setFullYear(parsedDate[2]);
+            if (Number.isNaN(normalizedDate.getTime())) {
+                return await sendMessage(messageObj, "Invalid date. Use DD.MM.YYYY");
+            }
+
             await sendPrediction(messageObj, normalizedDate.toISOString());
         }
     } else {
